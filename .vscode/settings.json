@@ -1,0 +1,13 @@
+{
+    "dart.lineLength": 250,
+    "[dart]": {
+        "editor.rulers": [
+            250
+        ],
+    },
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    }
+}
