@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:pacman_game/widgets/pacman.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -164,6 +165,7 @@ class _GameScreenState extends State<GameScreen> {
                     ElevatedButton(
                       onPressed: () {
                         // audioInGame.loop('pacman_beginning.wav');
+                        Navigator.pop(context);
                         setState(() {
                           player = numberInRow * 14 + 1;
                           ghost = numberInRow * 2 - 2;
@@ -176,22 +178,14 @@ class _GameScreenState extends State<GameScreen> {
                           food.clear();
                           getFood();
                           score = 0;
-                          Navigator.pop(context);
                         });
                       },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF0D47A1),
-                              Color(0xFF1976D2),
-                              Color(0xFF42A5F5),
-                            ],
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(10.0),
-                        child: const Text('Restart'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[900],
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
+                      child: const Text('Restart'),
                     )
                   ],
                 );
@@ -602,174 +596,97 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             Expanded(
-              flex: (MediaQuery.of(context).size.height.toInt() * 0.0139).toInt(),
-              child: GestureDetector(
-                onVerticalDragUpdate: (details) {
-                  if (details.delta.dy > 0) {
-                    direction = "down";
-                  } else if (details.delta.dy < 0) {
-                    direction = "up";
-                  }
-                },
-                onHorizontalDragUpdate: (details) {
-                  if (details.delta.dx > 0) {
-                    direction = "right";
-                  } else if (details.delta.dx < 0) {
-                    direction = "left";
-                  }
-                },
-                child: GridView.builder(
-                  padding: (MediaQuery.of(context).size.height.toInt() * 0.0139).toInt() > 10 ? const EdgeInsets.only(top: 80) : const EdgeInsets.only(top: 20),
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: numberOfSquares,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: numberInRow),
-                  itemBuilder: (BuildContext context, int index) {
-                    if (mouthClosed && player == index) {
-                      return Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Container(
-                          decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
-                        ),
-                      );
-                    } else if (player == index) {
-                      switch (direction) {
-                        case "left":
-                          return Transform.rotate(
-                            angle: pi,
-                            child: const Pacman(),
-                          );
-                        case "right":
-                          return const Pacman();
-                        case "up":
-                          return Transform.rotate(
-                            angle: 3 * pi / 2,
-                            child: const Pacman(),
-                          );
-                        case "down":
-                          return Transform.rotate(
-                            angle: pi / 2,
-                            child: const Pacman(),
-                          );
-                        default:
-                          return const Pacman();
-                      }
-                    } else if (ghost == index) {
-                      return Ghost(ghostType: 1);
-                    } else if (ghost2 == index) {
-                      return Ghost(ghostType: 2);
-                    } else if (ghost3 == index) {
-                      return Ghost(ghostType: 3);
-                    } else if (barriers.contains(index)) {
-                      return MyPixel(
-                        innerColor: Colors.blue[900],
-                        outerColor: Colors.blue[800],
-                      );
-                    } else if (preGame || food.contains(index)) {
-                      return const MyPath(
-                        innerColor: Colors.yellow,
-                        outerColor: Colors.black,
-                      );
-                    } else {
-                      return const MyPath(
-                        innerColor: Colors.black,
-                        outerColor: Colors.black,
-                      );
+              child: Padding(
+                padding: const EdgeInsets.all(15),
+                child: GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.delta.dy > 0) {
+                      direction = "down";
+                    } else if (details.delta.dy < 0) {
+                      direction = "up";
                     }
                   },
+                  onHorizontalDragUpdate: (details) {
+                    if (details.delta.dx > 0) {
+                      direction = "right";
+                    } else if (details.delta.dx < 0) {
+                      direction = "left";
+                    }
+                  },
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: numberOfSquares,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: numberInRow),
+                    itemBuilder: (BuildContext context, int index) {
+                      if (mouthClosed && player == index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Container(
+                            decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
+                          ),
+                        );
+                      } else if (player == index) {
+                        switch (direction) {
+                          case "left":
+                            return Transform.rotate(
+                              angle: pi,
+                              child: const Pacman(),
+                            );
+                          case "right":
+                            return const Pacman();
+                          case "up":
+                            return Transform.rotate(
+                              angle: 3 * pi / 2,
+                              child: const Pacman(),
+                            );
+                          case "down":
+                            return Transform.rotate(
+                              angle: pi / 2,
+                              child: const Pacman(),
+                            );
+                          default:
+                            return const Pacman();
+                        }
+                      } else if (ghost == index) {
+                        return Ghost(ghostType: 1);
+                      } else if (ghost2 == index) {
+                        return Ghost(ghostType: 2);
+                      } else if (ghost3 == index) {
+                        return Ghost(ghostType: 3);
+                      } else if (barriers.contains(index)) {
+                        return MyPixel(
+                          innerColor: Colors.blue[900],
+                          outerColor: Colors.blue[800],
+                        );
+                      } else if (preGame || food.contains(index)) {
+                        return const MyPath(
+                          innerColor: Colors.yellow,
+                          outerColor: Colors.black,
+                        );
+                      } else {
+                        return const MyPath(
+                          innerColor: Colors.black,
+                          outerColor: Colors.black,
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                  onPressed: () => startGame(),
-                  child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 23)),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () => startGame(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[900],
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
+                child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 23)),
               ),
             )
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class Pacman extends StatelessWidget {
-  const Pacman({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(2.0),
-      child: Image.asset('assets/images/pacman.png'),
-    );
-  }
-}
-
-class Ghost extends StatelessWidget {
-  Ghost({super.key, required this.ghostType});
-  int ghostType;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(2),
-      child: Image.asset('assets/images/ghost$ghostType.png'),
-    );
-  }
-}
-
-class MyPath extends StatelessWidget {
-  final Color? innerColor;
-  final Color? outerColor;
-  final Widget? child;
-
-  const MyPath({super.key, this.innerColor, this.outerColor, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          color: outerColor,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              color: innerColor,
-              child: Center(child: child),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MyPixel extends StatelessWidget {
-  final Color? innerColor;
-  final Color? outerColor;
-  final Widget? child;
-
-  const MyPixel({super.key, this.innerColor, this.outerColor, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          color: outerColor,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              color: innerColor,
-              child: Center(child: child),
-            ),
-          ),
         ),
       ),
     );
