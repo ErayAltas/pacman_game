@@ -648,11 +648,11 @@ class _GameScreenState extends State<GameScreen> {
                             return const Pacman();
                         }
                       } else if (ghost == index) {
-                        return Ghost(ghostType: 1);
+                        return const Ghost(ghostType: 1);
                       } else if (ghost2 == index) {
-                        return Ghost(ghostType: 2);
+                        return const Ghost(ghostType: 2);
                       } else if (ghost3 == index) {
-                        return Ghost(ghostType: 3);
+                        return const Ghost(ghostType: 3);
                       } else if (barriers.contains(index)) {
                         return MyPixel(
                           innerColor: Colors.blue[900],
