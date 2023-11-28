@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:pacman_game/widgets/pacman.dart';
 
@@ -21,16 +20,10 @@ class _GameScreenState extends State<GameScreen> {
   int ghost = numberInRow * 2 - 2;
   int ghost2 = numberInRow * 9 - 1;
   int ghost3 = numberInRow * 11 - 2;
-  bool preGame = true;
   bool mouthClosed = false;
+  Timer? pacmanTimer;
+  Timer? ghostTimer;
   int score = 0;
-  bool paused = false;
-  AudioPlayer advancedPlayer = AudioPlayer();
-  AudioPlayer advancedPlayer2 = AudioPlayer();
-  AudioCache audioInGame = AudioCache(prefix: 'assets/');
-  AudioCache audioMunch = AudioCache(prefix: 'assets/');
-  AudioCache audioDeath = AudioCache(prefix: 'assets/');
-  AudioCache audioPaused = AudioCache(prefix: 'assets/');
   List<int> barriers = [
     0,
     1,
@@ -127,148 +120,120 @@ class _GameScreenState extends State<GameScreen> {
     148,
     149
   ];
-
   List<int> food = [];
   String direction = "right";
   String ghostLast = "left";
   String ghostLast2 = "left";
   String ghostLast3 = "down";
 
-  void startGame() {
-    if (preGame) {
-      advancedPlayer = AudioPlayer();
-      audioInGame = AudioCache();
-      audioPaused = AudioCache();
-      // audioInGame.loop('pacman_beginning.wav');
-      preGame = false;
-      getFood();
+  @override
+  void initState() {
+    super.initState();
+    addFoods();
+  }
 
-      Timer.periodic(const Duration(milliseconds: 10), (timer) {
-        if (paused) {
-        } else {
-          advancedPlayer.resume();
-        }
-        if (player == ghost || player == ghost2 || player == ghost3) {
-          advancedPlayer.stop();
-          // audioDeath.play('pacman_death.wav');
-          setState(() {
-            player = -1;
-          });
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Center(child: Text("Game Over!")),
-                  content: Text("Your Score : $score"),
-                  actions: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // audioInGame.loop('pacman_beginning.wav');
-                        Navigator.pop(context);
-                        setState(() {
-                          player = numberInRow * 14 + 1;
-                          ghost = numberInRow * 2 - 2;
-                          ghost2 = numberInRow * 9 - 1;
-                          ghost3 = numberInRow * 11 - 2;
-                          paused = false;
-                          preGame = false;
-                          mouthClosed = false;
-                          direction = "right";
-                          food.clear();
-                          getFood();
-                          score = 0;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[900],
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Restart'),
-                    )
-                  ],
-                );
-              });
-        }
-      });
-      Timer.periodic(const Duration(milliseconds: 190), (timer) {
-        if (!paused) {
-          moveGhost();
-          moveGhost2();
-          moveGhost3();
-        }
-      });
-      Timer.periodic(const Duration(milliseconds: 170), (timer) {
+  void startGame() {
+    player = numberInRow * 14 + 1;
+    ghost = numberInRow * 2 - 2;
+    ghost2 = numberInRow * 9 - 1;
+    ghost3 = numberInRow * 11 - 2;
+    mouthClosed = false;
+    score = 0;
+    direction = "right";
+    food.clear();
+    addFoods();
+    Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      if (player == ghost || player == ghost2 || player == ghost3) {
         setState(() {
-          mouthClosed = !mouthClosed;
+          player = -1;
         });
-        if (food.contains(player)) {
-          // audioMunch.play('pacman_chomp.wav');
-          setState(() {
-            food.remove(player);
-          });
-          score++;
-        }
-        switch (direction) {
-          case "left":
-            if (!paused) moveLeft();
-            break;
-          case "right":
-            if (!paused) moveRight();
-            break;
-          case "up":
-            if (!paused) moveUp();
-            break;
-          case "down":
-            if (!paused) moveDown();
-            break;
-        }
+        showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Center(child: Text("Game Over!")),
+                content: Text("Your Score : $score"),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      timer.cancel();
+                      ghostTimer?.cancel();
+                      pacmanTimer?.cancel();
+                      Navigator.pop(context);
+                      startGame();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[900],
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('Restart'),
+                  )
+                ],
+              );
+            });
+      }
+    });
+    ghostTimer?.cancel();
+    pacmanTimer?.cancel();
+    ghostTimer = Timer.periodic(const Duration(milliseconds: 400), (timer) {
+      moveGhost();
+      moveGhost2();
+      moveGhost3();
+    });
+    pacmanTimer = Timer.periodic(const Duration(milliseconds: 280), (timer) {
+      pacmanMove();
+    });
+  }
+
+  void pacmanMove() {
+    setState(() {
+      mouthClosed = !mouthClosed;
+    });
+    if (food.contains(player)) {
+      setState(() {
+        score++;
+        food.remove(player);
       });
+    }
+    switch (direction) {
+      case "left":
+        if (!barriers.contains(player - 1)) {
+          setState(() {
+            player--;
+          });
+        }
+        break;
+      case "right":
+        if (!barriers.contains(player + 1)) {
+          setState(() {
+            player++;
+          });
+        }
+        break;
+      case "up":
+        if (!barriers.contains(player - numberInRow)) {
+          setState(() {
+            player -= numberInRow;
+          });
+        }
+        break;
+      case "down":
+        if (!barriers.contains(player + numberInRow)) {
+          setState(() {
+            player += numberInRow;
+          });
+        }
+        break;
     }
   }
 
-  void restart() {
-    startGame();
-  }
-
-  void getFood() {
+  void addFoods() {
     for (int i = 0; i < numberOfSquares; i++) {
       if (!barriers.contains(i)) {
         food.add(i);
       }
-    }
-  }
-
-  void moveLeft() {
-    if (!barriers.contains(player - 1)) {
-      setState(() {
-        player--;
-      });
-    }
-  }
-
-  void moveRight() {
-    if (!barriers.contains(player + 1)) {
-      setState(() {
-        player++;
-      });
-    }
-  }
-
-  void moveUp() {
-    if (!barriers.contains(player - numberInRow)) {
-      setState(() {
-        player -= numberInRow;
-      });
-    }
-  }
-
-  void moveDown() {
-    if (!barriers.contains(player + numberInRow)) {
-      setState(() {
-        player += numberInRow;
-      });
     }
   }
 
@@ -588,16 +553,10 @@ class _GameScreenState extends State<GameScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(border: Border.all(color: Colors.white)),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text("Score: $score", style: const TextStyle(color: Colors.white, fontSize: 23)),
-              ),
-            ),
+            const SizedBox(height: 30),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(15),
+                padding: const EdgeInsets.all(20),
                 child: GestureDetector(
                   onVerticalDragUpdate: (details) {
                     if (details.delta.dy > 0) {
@@ -621,29 +580,18 @@ class _GameScreenState extends State<GameScreen> {
                       if (mouthClosed && player == index) {
                         return Padding(
                           padding: const EdgeInsets.all(4),
-                          child: Container(
-                            decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
-                          ),
+                          child: Container(decoration: BoxDecoration(color: Colors.yellow.shade600, shape: BoxShape.circle)),
                         );
                       } else if (player == index) {
                         switch (direction) {
                           case "left":
-                            return Transform.rotate(
-                              angle: pi,
-                              child: const Pacman(),
-                            );
+                            return Transform.rotate(angle: pi, child: const Pacman());
                           case "right":
                             return const Pacman();
                           case "up":
-                            return Transform.rotate(
-                              angle: 3 * pi / 2,
-                              child: const Pacman(),
-                            );
+                            return Transform.rotate(angle: 3 * pi / 2, child: const Pacman());
                           case "down":
-                            return Transform.rotate(
-                              angle: pi / 2,
-                              child: const Pacman(),
-                            );
+                            return Transform.rotate(angle: pi / 2, child: const Pacman());
                           default:
                             return const Pacman();
                         }
@@ -654,20 +602,11 @@ class _GameScreenState extends State<GameScreen> {
                       } else if (ghost3 == index) {
                         return const Ghost(ghostType: 3);
                       } else if (barriers.contains(index)) {
-                        return MyPixel(
-                          innerColor: Colors.blue[900],
-                          outerColor: Colors.blue[800],
-                        );
-                      } else if (preGame || food.contains(index)) {
-                        return const MyPath(
-                          innerColor: Colors.yellow,
-                          outerColor: Colors.black,
-                        );
+                        return MyPixel(innerColor: Colors.blue[900], outerColor: Colors.blue[800]);
+                      } else if (food.contains(index)) {
+                        return const MyPath(innerColor: Colors.yellow, outerColor: Colors.black);
                       } else {
-                        return const MyPath(
-                          innerColor: Colors.black,
-                          outerColor: Colors.black,
-                        );
+                        return const MyPath(innerColor: Colors.black, outerColor: Colors.black);
                       }
                     },
                   ),
@@ -676,14 +615,25 @@ class _GameScreenState extends State<GameScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(border: Border.all(color: Colors.white)),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Score: $score", style: const TextStyle(color: Colors.white, fontSize: 25)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed: () => startGame(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[900],
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  backgroundColor: Colors.green.shade600,
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 23)),
+                child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 25)),
               ),
             )
           ],
