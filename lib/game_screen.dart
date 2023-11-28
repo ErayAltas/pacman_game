@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:pacman_game/widgets/pacman.dart';
+import 'package:pacman_game/widgets/widgets.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -121,10 +121,15 @@ class _GameScreenState extends State<GameScreen> {
     149
   ];
   List<int> food = [];
+  List<int> strongFood = [12, 73, 88, 113, 117];
+  bool isPacmanStrong = false;
   String direction = "right";
   String ghostLast = "left";
   String ghostLast2 = "left";
   String ghostLast3 = "down";
+  bool isGhost1Dead = false;
+  bool isGhost2Dead = false;
+  bool isGhost3Dead = false;
 
   @override
   void initState() {
@@ -140,49 +145,87 @@ class _GameScreenState extends State<GameScreen> {
     mouthClosed = false;
     score = 0;
     direction = "right";
+    isPacmanStrong = false;
+    isGhost1Dead = false;
+    isGhost2Dead = false;
+    isGhost3Dead = false;
     food.clear();
     addFoods();
     Timer.periodic(const Duration(milliseconds: 10), (timer) {
       if (player == ghost || player == ghost2 || player == ghost3) {
-        setState(() {
-          player = -1;
-        });
-        showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Center(child: Text("Game Over!")),
-                content: Text("Your Score : $score"),
-                actions: [
-                  ElevatedButton(
-                    onPressed: () {
-                      timer.cancel();
-                      ghostTimer?.cancel();
-                      pacmanTimer?.cancel();
-                      Navigator.pop(context);
-                      startGame();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[900],
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Restart'),
-                  )
-                ],
-              );
+        if (isPacmanStrong) {
+          if (player == ghost) {
+            setState(() {
+              isGhost1Dead = true;
             });
+            Timer(const Duration(seconds: 2), () {
+              setState(() {
+                isGhost1Dead = false;
+              });
+            });
+          }
+          if (player == ghost2) {
+            setState(() {
+              isGhost2Dead = true;
+            });
+            Timer(const Duration(seconds: 2), () {
+              setState(() {
+                isGhost2Dead = false;
+              });
+            });
+          }
+          if (player == ghost3) {
+            setState(() {
+              isGhost3Dead = true;
+            });
+            Timer(const Duration(seconds: 2), () {
+              setState(() {
+                isGhost3Dead = false;
+              });
+            });
+          }
+        } else {
+          timer.cancel();
+          showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Center(child: Text("Game Over!")),
+                  content: Text("Your Score : $score"),
+                  actions: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ghostTimer?.cancel();
+                        pacmanTimer?.cancel();
+                        startGame();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[900],
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Restart'),
+                    )
+                  ],
+                );
+              });
+        }
       }
     });
     ghostTimer?.cancel();
-    pacmanTimer?.cancel();
     ghostTimer = Timer.periodic(const Duration(milliseconds: 400), (timer) {
       moveGhost();
       moveGhost2();
       moveGhost3();
     });
-    pacmanTimer = Timer.periodic(const Duration(milliseconds: 280), (timer) {
+    initPacmanTimer(milliseconds: 280);
+  }
+
+  void initPacmanTimer({required int milliseconds}) {
+    pacmanTimer?.cancel();
+    pacmanTimer = Timer.periodic(Duration(milliseconds: milliseconds), (timer) {
       pacmanMove();
     });
   }
@@ -195,6 +238,20 @@ class _GameScreenState extends State<GameScreen> {
       setState(() {
         score++;
         food.remove(player);
+      });
+    }
+    if (strongFood.contains(player)) {
+      setState(() {
+        score++;
+        strongFood.remove(player);
+        isPacmanStrong = true;
+        initPacmanTimer(milliseconds: 150);
+        Timer(const Duration(seconds: 5), () {
+          setState(() {
+            isPacmanStrong = false;
+            initPacmanTimer(milliseconds: 280);
+          });
+        });
       });
     }
     switch (direction) {
@@ -231,9 +288,8 @@ class _GameScreenState extends State<GameScreen> {
 
   void addFoods() {
     for (int i = 0; i < numberOfSquares; i++) {
-      if (!barriers.contains(i)) {
-        food.add(i);
-      }
+      if (barriers.contains(i) || strongFood.contains(i)) continue;
+      food.add(i);
     }
   }
 
@@ -596,15 +652,17 @@ class _GameScreenState extends State<GameScreen> {
                             return const Pacman();
                         }
                       } else if (ghost == index) {
-                        return const Ghost(ghostType: 1);
+                        return Ghost(ghostType: 1, isDead: isGhost1Dead);
                       } else if (ghost2 == index) {
-                        return const Ghost(ghostType: 2);
+                        return Ghost(ghostType: 2, isDead: isGhost2Dead);
                       } else if (ghost3 == index) {
-                        return const Ghost(ghostType: 3);
+                        return Ghost(ghostType: 3, isDead: isGhost3Dead);
                       } else if (barriers.contains(index)) {
                         return MyPixel(innerColor: Colors.blue[900], outerColor: Colors.blue[800]);
                       } else if (food.contains(index)) {
                         return const MyPath(innerColor: Colors.yellow, outerColor: Colors.black);
+                      } else if (strongFood.contains(index)) {
+                        return const MyPath(innerColor: Colors.orange, isStrongFeed: true, outerColor: Colors.black);
                       } else {
                         return const MyPath(innerColor: Colors.black, outerColor: Colors.black);
                       }
@@ -616,9 +674,9 @@ class _GameScreenState extends State<GameScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
-                decoration: BoxDecoration(border: Border.all(color: Colors.white)),
+                decoration: BoxDecoration(border: Border.all(color: Colors.white), borderRadius: BorderRadius.circular(5)),
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: Text("Score: $score", style: const TextStyle(color: Colors.white, fontSize: 25)),
                 ),
               ),

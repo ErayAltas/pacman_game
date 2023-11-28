@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 class Pacman extends StatelessWidget {
   const Pacman({super.key});
@@ -13,14 +13,15 @@ class Pacman extends StatelessWidget {
 }
 
 class Ghost extends StatelessWidget {
-  const Ghost({super.key, required this.ghostType});
+  const Ghost({super.key, required this.ghostType, this.isDead});
   final int ghostType;
+  final bool? isDead;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(2),
-      child: Image.asset('assets/images/ghost$ghostType.png'),
+      child: Image.asset('assets/images/ghost$ghostType.png', color: (isDead ?? false) ? Colors.grey : null),
     );
   }
 }
@@ -29,8 +30,9 @@ class MyPath extends StatelessWidget {
   final Color? innerColor;
   final Color? outerColor;
   final Widget? child;
+  final bool? isStrongFeed;
 
-  const MyPath({super.key, this.innerColor, this.outerColor, this.child});
+  const MyPath({super.key, this.innerColor, this.outerColor, this.isStrongFeed, this.child});
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -38,7 +40,7 @@ class MyPath extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all((isStrongFeed ?? false) ? 9 : 12),
           color: outerColor,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
