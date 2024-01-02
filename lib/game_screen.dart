@@ -500,7 +500,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void moveGhost3() {
-    switch (ghostLast) {
+    switch (ghostLast3) {
       case "left":
         if (!barriers.contains(ghost3 - 1)) {
           setState(() {
